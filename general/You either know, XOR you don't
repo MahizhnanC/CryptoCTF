@@ -1,0 +1,17 @@
+ciphertext = bytes.fromhex("0e0b213f26041e480b26217f27342e175d0e070a3c5b103e2526217f27342e175d0e077e263451150104")
+
+# Known prefix of CryptoHack flags
+known_prefix = b"crypto{"
+
+# XOR first 7 ciphertext bytes with known flag prefix to get partial key
+partial_key = bytes([c ^ p for c, p in zip(ciphertext[:len(known_prefix)], known_prefix)])
+
+# Manually complete the key
+key = partial_key + b'y'  # gives b'myXORkey'
+
+# Repeat the key to match the length of ciphertext
+full_key = (key * (len(ciphertext) // len(key) + 1))[:len(ciphertext)]
+
+# Decrypt
+plaintext = bytes([c ^ k for c, k in zip(ciphertext, full_key)])
+print("Decrypted message:", plaintext.decode())
