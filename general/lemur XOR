@@ -1,0 +1,10 @@
+from PIL import Image
+import numpy as np
+
+# Use full absolute paths
+a = np.array(Image.open("lemur.png"))
+b = np.array(Image.open("flag.png"))
+
+out = np.bitwise_xor(a, b).astype(np.uint8)
+Image.fromarray(out).save("recovered.png")
+
