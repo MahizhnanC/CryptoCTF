@@ -1,0 +1,12 @@
+from binascii import unhexlify
+
+ciphertext = bytes.fromhex("73626960647f6b206821204f21254f7d694f7624662065622127234f726927756d")
+
+for key in range(256):
+    decoded = bytes([b ^ key for b in ciphertext])
+    if b"crypto{" in decoded:
+        print(f"Key: {key}")
+        print(decoded.decode())
+        break
+
+used this 
