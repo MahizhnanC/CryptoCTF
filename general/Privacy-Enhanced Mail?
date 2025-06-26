@@ -1,0 +1,11 @@
+from Crypto.PublicKey import RSA
+
+# Load the PEM-formatted RSA key
+with open("key.pem", "r") as f:
+    key_data = f.read()
+
+# Import the RSA key
+rsa_key = RSA.import_key(key_data)
+
+# Print the private exponent
+print("Private exponent (d):", rsa_key.d)
