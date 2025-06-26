@@ -1,0 +1,10 @@
+label = "label"  
+# XOR each character with 13 and join the result into a new string
+new_string = ''.join(chr(ord(c) ^ 13) for c in label)
+
+# Format the result as a flag
+flag = f"crypto{{{new_string}}}"
+print(flag)
+
+
+used this to get the flag
