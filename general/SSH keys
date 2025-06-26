@@ -1,0 +1,13 @@
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.backends import default_backend
+
+# Use your actual filename here
+with open("e14.pup", "rb") as f:
+    pub_key_data = f.read()
+
+# Load SSH public key
+pub_key = serialization.load_ssh_public_key(pub_key_data, backend=default_backend())
+pub_numbers = pub_key.public_numbers()
+
+# Print modulus in decimal (this is the flag)
+print(pub_numbers.n)
