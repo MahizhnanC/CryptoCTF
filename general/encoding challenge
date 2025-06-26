@@ -1,0 +1,91 @@
+We’re given a Python server that repeatedly sends us strings encoded using one of the following five encoding types:
+base64
+hex
+rot13
+bigint (hex of a long integer from bytes)
+utf-8 (list of integer byte values)
+Each message looks like this:
+{
+  "type": "hex",
+  "encoded": "746869735f69735f736f6d655f74657874"
+}
+We must decode it based on the "type" and send back:
+{
+  "decoded": "this_is_some_text"
+}
+This continues for 100 rounds. On success, the server returns the flag.
+
+Strategy:
+
+Connect to the server using pwntools.
+Parse the JSON received.
+
+Apply the correct decoding based on the "type":
+
+base64: base64.b64decode()
+hex: bytes.fromhex().decode()
+rot13: codecs.decode(str, 'rot_13')
+bigint: Convert hex to int, then use long_to_bytes(), decode to str.
+utf-8: Use chr() for each number, join to string.
+Send the decoded result back.
+Repeat until the flag is returned.
+
+Flag:
+Once all 100 encodings are solved correctly, the server sends back the final JSON containing:
+[+] Flag: crypto{3nc0d3_d3c0d3_3nc0d3}
+
+this was the py code used:
+
+from pwn import *  # pip install pwntools
+import json
+import base64
+import codecs
+from Crypto.Util.number import long_to_bytes
+
+# Connect to the challenge
+r = remote('socket.cryptohack.org', 13377, level='debug')
+
+def json_recv():
+    line = r.recvline()
+    return json.loads(line.decode())
+
+def json_send(hsh):
+    request = json.dumps(hsh).encode()
+    r.sendline(request)
+
+def solve_challenge(challenge):
+    encoding_type = challenge["type"]
+    encoded = challenge["encoded"]
+
+    if encoding_type == "base64":
+        decoded = base64.b64decode(encoded).decode()
+    elif encoding_type == "hex":
+        decoded = bytes.fromhex(encoded).decode()
+    elif encoding_type == "rot13":
+        decoded = codecs.decode(encoded, 'rot_13')
+    elif encoding_type == "bigint":
+        decoded = long_to_bytes(int(encoded, 16)).decode()
+    elif encoding_type == "utf-8":
+        decoded = ''.join([chr(b) for b in encoded])
+    else:
+        raise ValueError(f"Unknown encoding type: {encoding_type}")
+    
+    return decoded
+
+# Main loop
+while True:
+    received = json_recv()
+
+    # Final flag
+    if "flag" in received:
+        print("[+] Flag:", received["flag"])
+        break
+
+    # Decode the challenge
+    print(f"[Stage] Encoding Type: {received['type']}")
+    answer = solve_challenge(received)
+
+    # Send decoded message
+    json_send({
+        "decoded": answer
+    })
