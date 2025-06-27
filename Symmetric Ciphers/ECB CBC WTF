@@ -1,0 +1,46 @@
+Using /encrypt_flag/, we obtain this ciphertext:
+
+5489c6cbec9d439101a773bc97c36fe1
+e149c651d41a5e598dffc07d160c8ee5
+5113793e7b2f5997ba8125a111024ed7
+
+Which breaks into 3 blocks:
+
+C₀ (Block 0)
+C₁ (Block 1)
+C₂ (Block 2)
+
+
+We cannot decrypt CBC directly — but we can decrypt individual blocks using ECB:
+AES_DEC(Ci)
+
+And with CBC decryption logic:
+P₁ = AES_DEC(C₁) ⊕ C₀
+P₂ = AES_DEC(C₂) ⊕ C₁
+
+So although we don’t know the IV (needed for P₀ = AES_DEC(C₀) ⊕ IV), we can recover the rest of the flag starting from P₁.
+
+import requests
+from Crypto.Util.strxor import strxor
+
+BASE = "https://aes.cryptohack.org/ecbcbcwtf"
+
+def decrypt_block(hex_block):
+    r = requests.get(f"{BASE}/decrypt/{hex_block}/")
+    return bytes.fromhex(r.json()['plaintext'])
+
+def main():
+    ct_hex = "5489c6cbec9d439101a773bc97c36fe1e149c651d41a5e598dffc07d160c8ee55113793e7b2f5997ba8125a111024ed7"
+    blocks = [bytes.fromhex(ct_hex[i:i+32]) for i in range(0, len(ct_hex), 32)]
+
+    flag = b""
+    for i in range(1, len(blocks)):
+        dec = decrypt_block(blocks[i].hex())
+        pt = strxor(dec, blocks[i-1])
+        flag += pt
+
+    print("Decrypted partial flag:")
+    print(flag.decode())
+
+if __name__ == "__main__":
+    main()
