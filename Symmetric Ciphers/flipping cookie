@@ -1,0 +1,62 @@
+Get a fresh cookie from /get_cookie/ — it returns IV || ciphertext in hex.
+
+Reconstruct the plaintext:
+admin=False;expiry=TIMESTAMP (match the server’s format)
+
+Use XOR to modify the IV and ciphertext:
+fake = ";admin=True;"
+iv'[i] = iv[i] ⊕ original[i] ⊕ fake[i]
+Submit the modified cookie and iv to /check_admin/.
+
+#!/usr/bin/env python3
+import time
+from datetime import datetime, timedelta
+import requests
+
+def request_cookie():
+    r = requests.get("https://aes.cryptohack.org/flipping_cookie/get_cookie/")
+    return r.json()["cookie"]
+
+def request_check_admin(cookie, iv):
+    url = f"https://aes.cryptohack.org/flipping_cookie/check_admin/{cookie}/{iv}/"
+    r = requests.get(url)
+    return r.json()
+
+def flip(cookie_hex, plain):
+    cookie = bytes.fromhex(cookie_hex)
+    iv = cookie[:16]               # First 16 bytes = IV
+    cipher = cookie[16:]           # Rest = actual ciphertext
+
+    start = plain.find(b'admin=False')
+    fake = b';admin=True;'
+
+    # Create mutable bytearrays
+    new_iv = bytearray(iv)
+    new_cipher = bytearray(cipher)
+
+    for i in range(len(fake)):
+        if start + i < 16:
+            # Flip the IV if the byte is in the first block
+            new_iv[start + i] ^= plain[start + i] ^ fake[i]
+        else:
+            # Flip the second ciphertext block
+            j = start + i - 16
+            new_cipher[j] ^= plain[start + i] ^ fake[i]
+
+    return new_cipher.hex(), new_iv.hex()
+
+# === MAIN EXECUTION ===
+if __name__ == "__main__":
+    # Get the original cookie from the server
+    cookie_full = request_cookie()
+
+    # Build the matching plaintext (expiry must match server's)
+    expires_at = str(int(time.time()) + 86400)  # 1 day later in UNIX time
+    plain = f"admin=False;expiry={expires_at}".encode()
+
+    # Flip bits to convert "admin=False" to ";admin=True;"
+    cipher, iv = flip(cookie_full, plain)
+
+    # Send forged request
+    result = request_check_admin(cipher, iv)
+    print(result)
