@@ -1,0 +1,45 @@
+The  issue :
+class StepUpCounter:
+    def __init__(self, step_up=False):
+        self.value = os.urandom(16).hex()
+        self.step = 1
+        self.stup = step_up
+
+    def increment(self):
+        if self.stup:
+            self.newIV = hex(int(self.value, 16) + self.step)
+        else:
+            self.newIV = hex(int(self.value, 16) - self.stup)  # self.stup is False, so subtracts 0
+        self.value = self.newIV[2:]
+        return bytes.fromhex(self.value.zfill(32))
+When step_up=False, self.stup = False, so self.value is never actually changed — the same IV is used every time.
+As a result:
+The same AES block is used as the keystream for every block.
+This degenerates into a repeated-key XOR encryption.
+
+Request the encrypted image data (hex string).
+Use the known 16-byte PNG header:
+89 50 4E 47 0D 0A 1A 0A 00 00 00 0D 49 48 44 52
+XOR the first ciphertext block with this header → recover the 16-byte keystream.
+Repeat XOR for every 16-byte block in the ciphertext using this keystream.
+Reconstruct the image, save it as flag.png.
+Open the image to view the flag.
+
+from Crypto.Util.strxor import strxor
+with open("encrypted.txt", "r") as f:
+    hex_data = f.read().strip()
+ciphertext = bytes.fromhex(hex_data)
+png_header = bytes.fromhex("89504e470d0a1a0a0000000d49484452")
+keystream = strxor(ciphertext[:16], png_header)
+plaintext = b''
+for i in range(0, len(ciphertext), 16):
+    block = ciphertext[i:i+16]
+    ks = keystream[:len(block)]
+    plaintext += strxor(block, ks)
+
+with open("flag.png", "wb") as f:
+    f.write(plaintext)
+print("Check flag.png")
+
+Once decrypted, the flag.png image shows the flag:
+crypto{hex_bytes_beans}
