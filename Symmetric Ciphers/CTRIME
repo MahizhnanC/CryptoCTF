@@ -1,0 +1,45 @@
+We know the flag starts with crypto{.
+We brute-force the next character by appending guesses to the known prefix.
+For each guess, we send user_input = known_prefix + guess_char.
+the cypher text stalled at CRIM so i guessed it to be E and it continued
+Repeat until we reach }.
+
+
+import requests, string, time
+
+url = "https://aes.cryptohack.org/ctrime/encrypt/"
+alphabet = '}_!@?' + string.ascii_uppercase + string.digits + string.ascii_lowercase
+
+def encrypt(plaintext):
+    r = requests.get(url + plaintext + '/')
+    return r.json()['ciphertext']
+
+flag = b'crypto{'
+min_len = len(encrypt(flag.hex()))
+
+while not flag.endswith(b'}'):
+    best = None
+    best_len = float('inf')
+
+    for c in alphabet:
+        test = flag + c.encode()
+        clen = len(encrypt(test.hex()))
+        print(f"Trying {test.decode()} → length: {clen}")
+
+        if clen < best_len:
+            best_len = clen
+            best = c
+
+    if best_len <= min_len:
+        flag += best.encode()
+        min_len = best_len
+        print(f"[+] Found: {flag.decode()}")
+    else:
+        print("[-] Stuck. Possibly wrong charset or end of flag.")
+        break
+
+    time.sleep(0.1)
+
+print(f"\n✅ Final Flag: {flag.decode()}")
+
+crypto{CRIME_571ll_p4y5}
