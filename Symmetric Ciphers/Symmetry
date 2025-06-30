@@ -1,0 +1,20 @@
+OFB Mode:
+Converts a block cipher into a stream cipher.
+
+Keystream is generated independently of the plaintext.
+Encryption: ciphertext = keystream ⊕ plaintext
+Decryption: plaintext = keystream ⊕ ciphertext
+
+This means:
+If you know the IV and send your own plaintext to be encrypted, you can recover the keystream used to encrypt the flag.
+
+So if:
+ciphertext_flag = keystream ⊕ flag
+ciphertext_input = keystream ⊕ your_plaintext
+Then:
+ciphertext_input ⊕ your_plaintext = keystream
+keystream ⊕ ciphertext_flag = flag
+
+Get the IV and ciphertext of the flag from the /encrypt_flag/ endpoint.
+Encrypt known strings using /encrypt/<plaintext>/<iv>/.
+Compare returned ciphertexts with the flag ciphertext to guess the flag one character at a time.
