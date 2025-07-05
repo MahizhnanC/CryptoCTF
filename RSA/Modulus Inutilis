@@ -1,0 +1,21 @@
+from Crypto.Util.number import long_to_bytes
+
+def iroot(k, n):
+    """Integer k-th root using binary search"""
+    low = 0
+    high = n
+    while low < high:
+        mid = (low + high) // 2
+        if mid**k < n:
+            low = mid + 1
+        else:
+            high = mid
+    return low if low**k == n else low - 1
+
+ct = 243251053617903760309941844835411292373350655973075480264001352919865180151222189820473358411037759381328642957324889519192337152355302808400638052620580409813222660643570085177957
+pt = iroot(3, ct)
+flag = long_to_bytes(pt)
+print(flag)
+
+
+crypto{N33d_m04R_p4dd1ng}
